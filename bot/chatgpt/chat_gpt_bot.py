@@ -8,6 +8,8 @@ from common.expired_dict import ExpiredDict
 import openai
 import time
 
+from utils.utils import get_prompt
+
 if conf().get("expires_in_seconds"):
     all_sessions = ExpiredDict(conf().get("expires_in_seconds"))
 else:
@@ -169,7 +171,7 @@ class Session(object):
         """
         session = all_sessions.get(session_id, [])
         if len(session) == 0:
-            system_prompt = conf().get("character_desc", "")
+            system_prompt = get_prompt(conf().get("character_desc", ""), conf().get("alias", ""))
             system_item = {"role": "system", "content": system_prompt}
             session.append(system_item)
             all_sessions[session_id] = session

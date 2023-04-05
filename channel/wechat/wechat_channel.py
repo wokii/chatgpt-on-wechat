@@ -19,6 +19,12 @@ import time
 thread_pool = ThreadPoolExecutor(max_workers=8)
 
 
+def _process_content(content: str):
+    content_list = content.replace("\u2005", " ")
+    print("_process_content:", _process_content)
+    return content
+
+
 @itchat.msg_register(TEXT)
 def handler_single_msg(msg):
     WechatChannel().handle_text(msg)
@@ -129,13 +135,8 @@ class WechatChannel(Channel):
         if not group_name:
             return ""
         origin_content = msg["Content"]
-        content = msg["Content"]
-        content_list = content.split(" ", 1)
-        context_special_list = content.split("\u2005", 1)
-        if len(context_special_list) == 2:
-            content = context_special_list[1]
-        elif len(content_list) == 2:
-            content = content_list[1]
+        content = _process_content(origin_content)
+
         if "」\n- - - - - - - - - - - - - - -" in content:
             logger.debug("[WX]reference query skipped")
             return ""
@@ -144,14 +145,15 @@ class WechatChannel(Channel):
             (msg["IsAt"] and not config.get("group_at_off", False))
             or self.check_prefix(origin_content, config.get("group_chat_prefix"))
             or self.check_contain(origin_content, config.get("group_chat_keyword"))
+            or self.check_contain(origin_content, config.get("alias"))
         )
-        if (
+        if match_prefix and (
             "ALL_GROUP" in config.get("group_name_white_list")
             or group_name in config.get("group_name_white_list")
             or self.check_contain(
                 group_name, config.get("group_name_keyword_white_list")
             )
-        ) and match_prefix:
+        ):
             img_match_prefix = self.check_prefix(
                 content, conf().get("image_create_prefix")
             )
